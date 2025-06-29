@@ -1,0 +1,16 @@
+{
+  "tsx": {
+    "watch": {
+      "ignore": [
+        "node_modules/**",
+        "dist/**",
+        "*.log"
+      ]
+    },
+    "esbuild": {
+      "target": "node22",
+      "format": "esm",
+      "platform": "node"
+    }
+  }
+} 
