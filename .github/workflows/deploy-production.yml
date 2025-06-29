@@ -19,6 +19,9 @@ jobs:
   deploy:
     name: Deploy to Google Cloud Run
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -85,37 +88,66 @@ jobs:
 
       - name: Health check
         run: |
+          echo "Waiting for service to be ready..."
           sleep 30
-          curl -f ${{ steps.deploy.outputs.url }}/health || exit 1
+
+          # Retry health check with timeout
+          for i in {1..5}; do
+            echo "Health check attempt $i/5"
+            if curl -f --max-time 30 ${{ steps.deploy.outputs.url }}/health; then
+              echo "Health check passed!"
+              break
+            else
+              echo "Health check failed, retrying in 10 seconds..."
+              sleep 10
+            fi
+          done
+
+          # Final check
+          curl -f --max-time 30 ${{ steps.deploy.outputs.url }}/health || exit 1
 
       - name: Create deployment summary
         uses: actions/github-script@v7
         with:
           script: |
-            const deploymentInfo = {
-              service: '${{ env.PROJECT_NAME }}',
-              url: '${{ steps.deploy.outputs.url }}',
-              commit: '${{ env.IMAGE_TAG }}',
-              commitMessage: '${{ github.event.head_commit.message }}',
-              author: '${{ github.event.head_commit.author.name }}',
-              timestamp: '${{ github.event.head_commit.timestamp }}'
-            };
+            try {
+              const deploymentInfo = {
+                service: '${{ env.PROJECT_NAME }}' || 'truther-api',
+                url: '${{ steps.deploy.outputs.url }}' || 'N/A',
+                commit: '${{ env.IMAGE_TAG }}' || '${{ github.sha }}',
+                commitMessage: '${{ github.event.head_commit.message }}' || 'No commit message',
+                author: '${{ github.event.head_commit.author.name }}' || 'Unknown',
+                timestamp: '${{ github.event.head_commit.timestamp }}' || new Date().toISOString()
+              };
 
-            const summary = `## Production Deployment Successful
+              console.log('Deployment info:', JSON.stringify(deploymentInfo, null, 2));
 
-            **Service:** ${deploymentInfo.service}
-            **URL:** ${deploymentInfo.url}
-            **Commit:** ${deploymentInfo.commit.substring(0, 7)}
-            **Message:** ${deploymentInfo.commitMessage}
-            **Author:** ${deploymentInfo.author}
-            **Deployed at:** ${deploymentInfo.timestamp}
+              const summary = `## Production Deployment Successful
 
-            ---
-            *Deployment completed successfully*`;
+              **Service:** ${deploymentInfo.service}
+              **URL:** ${deploymentInfo.url}
+              **Commit:** ${deploymentInfo.commit.substring(0, 7)}
+              **Message:** ${deploymentInfo.commitMessage}
+              **Author:** ${deploymentInfo.author}
+              **Deployed at:** ${deploymentInfo.timestamp}
 
-            await github.rest.repos.createCommitComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: context.sha,
-              body: summary
-            });
+              ---
+              *Deployment completed successfully*`;
+
+              console.log('Creating commit comment...');
+              
+              const response = await github.rest.repos.createCommitComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: context.sha,
+                body: summary
+              });
+
+              console.log('Commit comment created successfully:', response.data.html_url);
+            } catch (error) {
+              console.error('Error creating commit comment:', error.message);
+              console.error('Error details:', JSON.stringify(error, null, 2));
+              
+              // Don't fail the workflow if comment creation fails
+              core.warning('Failed to create commit comment, but deployment was successful');
+            }
