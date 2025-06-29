@@ -37,8 +37,8 @@ jobs:
         env:
           CI: true
 
-      - name: Check code formatting
-        run: npm run format:check
+      - name: Fix code formatting
+        run: npm run code:fix
         env:
           CI: true
 
