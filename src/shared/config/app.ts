@@ -1,6 +1,5 @@
-import express, { Request, Response, json } from 'express';
+import express, { json } from 'express';
 import { mainRouter } from '@/router';
-import { Log } from '@/shared/logger/log';
 import { errorHandlerMiddleware } from '../adapters';
 
 class App {

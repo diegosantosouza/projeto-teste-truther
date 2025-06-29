@@ -9,8 +9,8 @@
   "scripts": {
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "build": "tsc",
-    "start": "node .",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --outfile=dist/index.js --sourcemap --external:bcrypt",
+    "start": "node --enable-source-maps dist/index.js",
     "dev": "tsx watch --env-file .env.local src/index.ts",
     "debug": "tsx --inspect=0.0.0.0:9229 --env-file .env.local src/index.ts",
     "debug:watch": "tsx watch --inspect=0.0.0.0:9229 --env-file .env.local src/index.ts",
@@ -37,6 +37,7 @@
     "@types/node": "^22.15.33",
     "@typescript-eslint/eslint-plugin": "^8.35.0",
     "@typescript-eslint/parser": "^8.35.0",
+    "esbuild": "^0.19.4",
     "eslint": "^9.30.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.1",
