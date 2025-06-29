@@ -41,10 +41,23 @@ jobs:
 
       - name: Create Artifact Registry repository
         run: |
-          gcloud artifacts repositories create ${{ env.PROJECT_NAME }} \
-            --repository-format=docker \
-            --location=${{ env.GCP_REGION }} \
-            --quiet || echo "Repository already exists"
+          # Check if repository exists
+          if ! gcloud artifacts repositories describe ${{ env.PROJECT_NAME }} --location=${{ env.GCP_REGION }} --quiet 2>/dev/null; then
+            echo "Creating Artifact Registry repository..."
+            gcloud artifacts repositories create ${{ env.PROJECT_NAME }} \
+              --repository-format=docker \
+              --location=${{ env.GCP_REGION }} \
+              --description="Truther API Docker repository" \
+              --quiet
+          else
+            echo "Repository ${{ env.PROJECT_NAME }} already exists"
+          fi
+
+      - name: Verify repository permissions
+        run: |
+          echo "Verifying repository permissions..."
+          gcloud artifacts repositories describe ${{ env.PROJECT_NAME }} --location=${{ env.GCP_REGION }}
+          echo "Repository permissions verified successfully"
 
       - name: Build and push Docker image
         run: |

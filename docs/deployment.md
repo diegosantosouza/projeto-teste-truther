@@ -20,6 +20,8 @@ Chave JSON da Service Account do Google Cloud Platform com as seguintes permiss�
 - Storage Admin
 - Service Account User
 - Artifact Registry Admin (para gerenciar repositórios de imagens)
+- Artifact Registry Repository Administrator
+- Artifact Registry Writer
 
 **Como obter:**
 1. Acesse o [Google Cloud Console](https://console.cloud.google.com/)
@@ -141,6 +143,25 @@ gcloud artifacts repositories create truther-api \
   --location=us-central1 \
   --description="Truther API Docker repository"
 ```
+
+### Erro de Permissão no Artifact Registry
+Se você encontrar o erro:
+```
+Permission "artifactregistry.repositories.uploadArtifacts" denied
+```
+
+Siga estes passos:
+1. Acesse o [Google Cloud Console](https://console.cloud.google.com/)
+2. Vá para **IAM & Admin** > **IAM**
+3. Encontre sua service account
+4. Clique no lápis (editar) ao lado da service account
+5. Adicione estas permissões específicas:
+   - **Artifact Registry Admin**
+   - **Artifact Registry Repository Administrator**
+   - **Artifact Registry Writer**
+6. Salve as mudanças
+7. Aguarde alguns minutos para as permissões se propagarem
+8. Execute o deploy novamente
 
 ## Variáveis de Ambiente
 
