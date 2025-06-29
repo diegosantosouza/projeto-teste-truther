@@ -107,6 +107,7 @@ Chave JSON da Service Account do Google Cloud Platform com as seguintes permiss√
 - Cloud Run Admin
 - Storage Admin
 - Service Account User
+- Artifact Registry Admin (para gerenciar reposit√≥rios de imagens)
 
 **Como obter:**
 1. Acesse o [Google Cloud Console](https://console.cloud.google.com)

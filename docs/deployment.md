@@ -1,79 +1,78 @@
-# Deploy em Produção - Google Cloud Run
+# Deploy em Produção
 
-Este documento explica como configurar e executar o deploy automático da aplicação no Google Cloud Run.
+Este documento descreve o processo de deploy da aplicação Truther API para produção usando Google Cloud Run.
 
 ## Pré-requisitos
 
 1. **Conta Google Cloud Platform (GCP)**
 2. **Projeto GCP configurado**
 3. **Google Cloud Run API habilitada**
-4. **Container Registry API habilitada**
+4. **Artifact Registry API habilitada** (substitui Container Registry)
 5. **Service Account com permissões adequadas**
 
 ## Configuração dos Secrets no GitHub
 
-Para que o workflow funcione corretamente, você precisa configurar os seguintes secrets no repositório GitHub:
+Para que o deploy automático funcione, configure os seguintes secrets no repositório GitHub:
 
 ### 1. GCP_SA_KEY
 Chave JSON da Service Account do Google Cloud Platform com as seguintes permissões:
 - Cloud Run Admin
 - Storage Admin
 - Service Account User
+- Artifact Registry Admin (para gerenciar repositórios de imagens)
 
 **Como obter:**
-1. Acesse o [Google Cloud Console](https://console.cloud.google.com)
-2. Vá para "IAM & Admin" > "Service Accounts"
-3. Crie uma nova Service Account ou use uma existente
-4. Adicione as permissões necessárias
-5. Crie uma nova chave (JSON)
-6. Copie o conteúdo JSON completo
+1. Acesse o [Google Cloud Console](https://console.cloud.google.com/)
+2. Selecione seu projeto
+3. Vá para **IAM & Admin** > **Service Accounts**
+4. Clique em **Create Service Account**
+5. Dê um nome e descrição para a service account
+6. Clique em **Create and Continue**
+7. Na tela de permissões, adicione os roles mencionados acima
+8. Clique em **Done**
+9. Na lista de service accounts, clique na que você criou
+10. Vá para a aba **Keys**
+11. Clique em **Add Key** > **Create new key**
+12. Selecione **JSON** como formato
+13. Clique em **Create**
+14. O arquivo JSON será baixado automaticamente
 
 ### 2. GCP_PROJECT_ID
 ID do projeto GCP onde a aplicação será deployada.
 
 **Exemplo:** `meu-projeto-123456`
 
-### 3. GCP_REGION
-Região onde o Cloud Run será deployado.
-
-**Exemplos:**
-- `us-central1`
-- `us-east1`
-- `europe-west1`
-- `southamerica-east1`
-
-### 4. MONGO_URI
+### 3. MONGO_URI
 URI de conexão com o MongoDB em produção.
 
 **Formato:** `mongodb+srv://username:password@cluster.mongodb.net/database`
 
-## Configuração dos Secrets
+## Como Configurar os Secrets
 
 1. Acesse o repositório no GitHub
-2. Vá para "Settings" > "Secrets and variables" > "Actions"
-3. Clique em "New repository secret"
+2. Vá para **Settings** > **Secrets and variables** > **Actions**
+3. Clique em **New repository secret**
 4. Adicione cada um dos secrets listados acima
 
-## Como funciona o Deploy
+## Processo de Deploy
 
-### Trigger
 O deploy é executado automaticamente quando:
 - Há um push na branch `main`
 - Execução manual via `workflow_dispatch`
 
-### Processo
-1. **Checkout do código**
-2. **Setup do Node.js**
-3. **Instalação de dependências**
-4. **Execução dos testes**
-5. **Build da aplicação**
-6. **Autenticação no Google Cloud**
-7. **Build e push da imagem Docker**
-8. **Deploy no Cloud Run**
-9. **Health check**
-10. **Criação de comentário com resumo do deploy**
+### Etapas do Processo
 
-### Configuração do Cloud Run
+1. **Checkout do código** - Baixa o código do repositório
+2. **Google Auth** - Autentica com o Google Cloud usando a service account
+3. **Setup Cloud SDK** - Configura o Google Cloud SDK
+4. **Configure Docker** - Configura Docker para usar Artifact Registry
+5. **Create Artifact Registry repository** - Cria o repositório de imagens (se não existir)
+6. **Build and push Docker image** - Constrói e faz push da imagem Docker
+7. **Deploy to Cloud Run** - Faz deploy da aplicação no Cloud Run
+8. **Health check** - Verifica se a aplicação está funcionando
+9. **Create deployment summary** - Cria um resumo do deploy
+
+## Configuração do Cloud Run
 
 O serviço é configurado com:
 - **Memória:** 512Mi
@@ -82,14 +81,24 @@ O serviço é configurado com:
 - **Instâncias mínimas:** 0 (scale to zero)
 - **Timeout:** 300 segundos
 - **Porta:** 3000
-- **Acesso:** Público (--allow-unauthenticated)
+- **Acesso:** Público
 
-## Endpoints
+## Artifact Registry
 
-### Health Check
+O projeto usa o **Artifact Registry** (substituindo o Container Registry que foi descontinuado):
+
+- **Repositório:** `truther-api`
+- **Localização:** `us-central1`
+- **Formato:** Docker
+- **URL do repositório:** `us-central1-docker.pkg.dev/{PROJECT_ID}/truther-api/{IMAGE_NAME}`
+
+## Health Check
+
+Após o deploy, a aplicação fica disponível em:
 - **URL:** `https://your-service-url/health`
 - **Método:** GET
-- **Resposta:**
+
+**Resposta esperada:**
 ```json
 {
   "status": "OK",
@@ -108,23 +117,30 @@ Após o deploy, você pode monitorar a aplicação através:
 
 ## Troubleshooting
 
-### Erro de autenticação
-- Verifique se o `GCP_SA_KEY` está correto
-- Confirme se a Service Account tem as permissões necessárias
+### Erro de Container Registry Deprecated
+Se você encontrar o erro:
+```
+Container Registry is deprecated and shutting down
+```
 
-### Erro de build
-- Verifique se o Dockerfile está correto
-- Confirme se todas as dependências estão no package.json
+Isso significa que o projeto ainda estava usando o Container Registry antigo. O workflow atualizado já resolve isso migrando para o Artifact Registry.
 
-### Erro de deploy
-- Verifique se o `GCP_PROJECT_ID` está correto
-- Confirme se a `GCP_REGION` existe
-- Verifique se as APIs estão habilitadas
+### Erro de Permissões
+Se você encontrar erros de permissão, verifique se a service account tem todos os roles necessários:
+- Cloud Run Admin
+- Storage Admin
+- Service Account User
+- Artifact Registry Admin
 
-### Health check falha
-- Verifique se a aplicação está iniciando corretamente
-- Confirme se o endpoint `/health` está funcionando
-- Verifique os logs do Cloud Run
+### Erro de Repositório não Encontrado
+O workflow automaticamente cria o repositório `truther-api` no Artifact Registry se ele não existir. Se houver problemas, você pode criar manualmente:
+
+```bash
+gcloud artifacts repositories create truther-api \
+  --repository-format=docker \
+  --location=us-central1 \
+  --description="Truther API Docker repository"
+```
 
 ## Variáveis de Ambiente
 
