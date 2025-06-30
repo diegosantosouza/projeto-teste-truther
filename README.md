@@ -2,6 +2,11 @@
 
 Uma API para gerenciamento de dados de criptomoedas e usuários, construída com Node.js, TypeScript, Express e MongoDB.
 
+## Endereço da API
+```bash
+https://truther-api-706208818538.us-central1.run.app
+```
+
 ## Características
 
 - **Arquitetura Limpa**: Implementação seguindo Clean Architecture e SOLID
