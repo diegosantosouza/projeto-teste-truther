@@ -328,32 +328,13 @@ Para informações detalhadas sobre desenvolvimento, debugging e configuração,
 
 - Senhas hasheadas com bcrypt
 - Validação de entrada com Zod
-- Rate limiting (configurável)
-- Headers de segurança
 - Usuário não-root no Docker
 
 ## Monitoramento
 
 - Health checks automáticos
 - Logs estruturados
-- Métricas de performance
 - Tratamento de erros centralizado
-
-## Contribuindo
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## Licença
-
-Este projeto está sob a licença ISC. Veja o arquivo `LICENSE` para mais detalhes.
-
-## Suporte
-
-Para suporte, abra uma issue no repositório ou entre em contato com a equipe de desenvolvimento.
 
 ---
 
