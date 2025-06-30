@@ -176,6 +176,8 @@ Estende `BaseRepository` e implementa operações específicas para coins:
 Função responsável por converter dados da API do CoinGecko para o formato interno da aplicação:
 
 ```typescript
+import { marketDataToCoin } from '@/shared/providers/adapter/market-data-to-coin';
+
 export function marketDataToCoin(marketData: CoinMarketData): Omit<Coin, keyof BaseModel>
 ```
 
@@ -207,9 +209,14 @@ Router Express que define todas as rotas do módulo de coins:
 
 ## Integração com CoinGecko
 
-O módulo integra com a API do CoinGecko através do provedor `MarketData`:
+O módulo integra com a API do CoinGecko através do provedor `MarketDataCoingecko`, que implementa a interface `MarketDataInterface`:
 
-### MarketData.get(coinId, currency)
+```typescript
+import { MarketDataCoingecko } from '@/shared/providers/coingecko/market-data-coingecko';
+import { MarketDataInterface } from '@/shared/providers/interfaces/market-data';
+```
+
+### MarketDataCoingecko.get(coinId, currency)
 
 **Responsabilidade**: Buscar dados atualizados de uma moeda na API do CoinGecko.
 
@@ -217,7 +224,7 @@ O módulo integra com a API do CoinGecko através do provedor `MarketData`:
 - `coinId`: ID da moeda (deve ser um valor válido do CoinsNameEnum)
 - `currency`: Moeda de referência (padrão: 'usd')
 
-**Retorno**: `CoinMarketData | null`
+**Retorno**: `Coin | null`
 
 **Configuração**:
 - Base URL: Configurada via `COINGECKO_BASE_URL`

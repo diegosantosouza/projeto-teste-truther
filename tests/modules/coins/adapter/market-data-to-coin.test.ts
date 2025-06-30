@@ -1,4 +1,4 @@
-import { marketDataToCoin } from '@/modules/coins/adapter';
+import { marketDataToCoin } from '@/shared/providers/adapter/market-data-to-coin';
 import { MockMarketData } from '../__mocks__/market-data.mock';
 import { CoinsNameEnum } from '@/modules/coins/entities';
 

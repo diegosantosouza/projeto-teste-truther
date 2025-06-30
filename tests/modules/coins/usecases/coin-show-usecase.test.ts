@@ -1,33 +1,28 @@
-jest.mock('@/shared/providers/coingecko', () => ({
-  MarketData: {
-    get: jest.fn()
-  }
-}));
-
 import { CoinShowUseCase } from '@/modules/coins/usecases';
 import { MockCoinRepository } from '../__mocks__/coin-repository.mock';
-import { MockMarketData } from '../__mocks__/market-data.mock';
 import { CoinFactory } from '../__mocks__/coin-factory';
 import { CoinsNameEnum } from '@/modules/coins/entities';
 import { NotFoundError, ServerError } from '@/shared/errors';
-import { MarketData } from '@/shared/providers/coingecko';
+import { MarketDataInterface } from '@/shared/providers/interfaces/market-data';
+import { marketDataToCoin } from '@/shared/providers/adapter/market-data-to-coin';
 
 describe('CoinShowUseCase', () => {
   let useCase: CoinShowUseCase;
   let mockRepository: MockCoinRepository;
-  const mockMarketDataGet = MarketData.get as jest.MockedFunction<typeof MarketData.get>;
+  let mockMarketDataProvider: jest.Mocked<MarketDataInterface>;
 
   beforeEach(() => {
     mockRepository = new MockCoinRepository();
-    useCase = new CoinShowUseCase(mockRepository as any);
-    MockMarketData.clearMockData();
-    jest.clearAllMocks();
+    mockMarketDataProvider = {
+      get: jest.fn()
+    };
+    useCase = new CoinShowUseCase(mockRepository as any, mockMarketDataProvider);
   });
 
   describe('execute', () => {
     it('should return coin from API when available', async () => {
-      const mockMarketData = MockMarketData.createMockCoinMarketData(CoinsNameEnum.BITCOIN);
-      mockMarketDataGet.mockResolvedValue(mockMarketData);
+      const mockCoin = CoinFactory.createBitcoin();
+      mockMarketDataProvider.get.mockResolvedValue(mockCoin);
 
       const result = await useCase.execute({ coinId: CoinsNameEnum.BITCOIN });
 
@@ -37,7 +32,7 @@ describe('CoinShowUseCase', () => {
     });
 
     it('should return cached coin when API is not available', async () => {
-      mockMarketDataGet.mockResolvedValue(null);
+      mockMarketDataProvider.get.mockResolvedValue(null);
 
       const cachedCoin = CoinFactory.createBitcoin();
       mockRepository.setMockData([cachedCoin]);
@@ -48,7 +43,7 @@ describe('CoinShowUseCase', () => {
     });
 
     it('should throw NotFoundError when coin not found in API or cache', async () => {
-      mockMarketDataGet.mockResolvedValue(null);
+      mockMarketDataProvider.get.mockResolvedValue(null);
       mockRepository.setMockData([]);
 
       await expect(useCase.execute({ coinId: CoinsNameEnum.BITCOIN }))
@@ -56,8 +51,8 @@ describe('CoinShowUseCase', () => {
     });
 
     it('should update cache when API returns new data', async () => {
-      const mockMarketData = MockMarketData.createMockCoinMarketData(CoinsNameEnum.BITCOIN);
-      mockMarketDataGet.mockResolvedValue(mockMarketData);
+      const mockCoin = CoinFactory.createBitcoin();
+      mockMarketDataProvider.get.mockResolvedValue(mockCoin);
 
       const result = await useCase.execute({ coinId: CoinsNameEnum.BITCOIN });
 
@@ -66,10 +61,8 @@ describe('CoinShowUseCase', () => {
     });
 
     it('should handle different coin types', async () => {
-      const mockMarketData = MockMarketData.createMockCoinMarketData(CoinsNameEnum.ETHEREUM);
-      mockMarketData.name = 'Ethereum';
-      mockMarketData.current_price = 3000;
-      mockMarketDataGet.mockResolvedValue(mockMarketData);
+      const mockCoin = CoinFactory.createEthereum();
+      mockMarketDataProvider.get.mockResolvedValue(mockCoin);
 
       const result = await useCase.execute({ coinId: CoinsNameEnum.ETHEREUM });
 

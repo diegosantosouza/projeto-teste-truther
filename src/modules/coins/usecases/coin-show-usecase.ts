@@ -1,14 +1,16 @@
 import { CoinRepository } from '@/modules/coins/repositories';
 import { NotFoundError, ServerError } from '@/shared/errors';
 import { CoinShowInput, CoinShowOutput } from '@/modules/coins/dto';
-import { MarketData } from '@/shared/providers/coingecko';
-import { marketDataToCoin } from '@/modules/coins/adapter';
+import { MarketDataInterface } from '@/shared/providers/interfaces';
 
 export class CoinShowUseCase {
-  constructor(private readonly coinRepository: CoinRepository) { }
+  constructor(
+    private readonly coinRepository: CoinRepository,
+    private readonly marketDataProvider: MarketDataInterface
+  ) { }
 
   async execute(input: CoinShowUseCase.Input): Promise<CoinShowUseCase.Output> {
-    const marketData = await MarketData.get(input.coinId);
+    const marketData = await this.marketDataProvider.get(input.coinId);
     if (!marketData) {
       const coinCachedInDb = await this.coinRepository.findOne({ coinId: input.coinId });
       if (!coinCachedInDb) {
@@ -16,8 +18,7 @@ export class CoinShowUseCase {
       }
       return coinCachedInDb;
     }
-    const coin = marketDataToCoin(marketData);
-    const coinRefreshed = await this.coinRepository.upsert({ coinId: input.coinId }, coin);
+    const coinRefreshed = await this.coinRepository.upsert({ coinId: input.coinId }, marketData);
     if (!coinRefreshed) {
       throw new ServerError('Error upserting coin');
     }

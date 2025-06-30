@@ -297,6 +297,8 @@ src/
 │   ├── config/          # Configurações
 │   ├── http/            # Cliente HTTP
 │   ├── providers/       # Provedores externos
+│   │   ├── adapter/     # Adaptadores (ex: marketDataToCoin)
+│   │   └── coingecko/   # Provider CoinGecko
 │   └── ...
 └── infrastructure/      # Infraestrutura
     └── database/        # Configuração do banco

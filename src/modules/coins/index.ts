@@ -5,5 +5,4 @@ export * from './repositories';
 export * from './factories';
 export * from './controllers';
 export * from './entrypoints';
-export * from './adapter';
 export * from './schemas';

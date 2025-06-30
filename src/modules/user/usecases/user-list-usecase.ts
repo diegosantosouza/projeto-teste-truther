@@ -6,17 +6,7 @@ export class UserListUseCase {
   constructor(private readonly userRepository: UserRepository) { }
 
   async execute(input: UserListUseCase.Input): Promise<UserListUseCase.Output> {
-    const criteria: { [key: string]: unknown } = {};
-    if (input.name) {
-      criteria.name = { $regex: input.name, $options: 'i' };
-    }
-    if (input.email) {
-      criteria.email = { $regex: input.email, $options: 'i' };
-    }
-    if (input.roles) {
-      criteria.roles = { $in: [input.roles] };
-    }
-    const users = await this.userRepository.find(criteria);
+    const users = await this.userRepository.find(input);
     return users.map(removeUserPassword);
   }
 }

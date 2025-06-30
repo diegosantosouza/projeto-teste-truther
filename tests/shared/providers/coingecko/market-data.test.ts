@@ -1,9 +1,9 @@
-import { MarketData } from '../../../../src/shared/providers/coingecko/market-data';
+import { MarketDataCoingecko } from '../../../../src/shared/providers/coingecko/market-data-coingecko';
 import { Coingecko } from '../../../../src/shared/providers/coingecko/coingecko-provider';
 
 jest.mock('../../../../src/shared/providers/coingecko/coingecko-provider');
 
-describe('MarketData', () => {
+describe('MarketDataCoingecko', () => {
   const mockCoingecko = {
     get: jest.fn(),
   };
@@ -20,6 +20,11 @@ describe('MarketData', () => {
         symbol: 'btc',
         name: 'Bitcoin',
         current_price: 50000,
+        market_cap: 1000000000,
+        price_change_percentage_24h: 4.0,
+        price_change_percentage_7d_in_currency: 2.5,
+        atl: 67.81,
+        ath: 69000,
       }];
       const mockResponse = {
         status: () => 200,
@@ -27,8 +32,12 @@ describe('MarketData', () => {
       };
       mockCoingecko.get.mockResolvedValue(mockResponse);
 
-      const result = await MarketData.get('bitcoin');
-      expect(result).toEqual(mockData[0]);
+      const provider = new MarketDataCoingecko();
+      const result = await provider.get('bitcoin');
+
+      expect(result).toBeDefined();
+      expect(result?.coinId).toBe('bitcoin');
+      expect(result?.name).toBe('Bitcoin');
       expect(mockCoingecko.get).toHaveBeenCalledWith('/coins/markets?vs_currency=usd&ids=bitcoin&price_change_percentage=7d');
     });
 
@@ -39,7 +48,8 @@ describe('MarketData', () => {
       };
       mockCoingecko.get.mockResolvedValue(mockResponse);
 
-      const result = await MarketData.get('invalid-coin');
+      const provider = new MarketDataCoingecko();
+      const result = await provider.get('invalid-coin');
       expect(result).toBeNull();
     });
 
@@ -50,7 +60,8 @@ describe('MarketData', () => {
       };
       mockCoingecko.get.mockResolvedValue(mockResponse);
 
-      const result = await MarketData.get('bitcoin');
+      const provider = new MarketDataCoingecko();
+      const result = await provider.get('bitcoin');
       expect(result).toBeNull();
     });
 
@@ -62,7 +73,8 @@ describe('MarketData', () => {
       };
       mockCoingecko.get.mockResolvedValue(mockResponse);
 
-      await MarketData.get('bitcoin', 'eur');
+      const provider = new MarketDataCoingecko();
+      await provider.get('bitcoin', 'eur');
       expect(mockCoingecko.get).toHaveBeenCalledWith('/coins/markets?vs_currency=eur&ids=bitcoin&price_change_percentage=7d');
     });
   });
